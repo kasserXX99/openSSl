@@ -7,17 +7,12 @@ import path from "path";
 
 const __filename = path.dirname(fileURLToPath(import.meta.url));
 
-const validate = async (merchant_name) => {
+const validate = (merchant_name) => {
 	return new Promise(async (res, rej) => {
 		const key = path.join(
 			__filename,
 			`../../apple_certificate/${merchant_name}.key`
 		);
-		const cer = path.join(
-			__filename,
-			`../../apple_certificate/${merchant_name}.cer`
-		);
-
 		const res1 = await execute(
 			"cer",
 			merchant_name,
@@ -25,18 +20,18 @@ const validate = async (merchant_name) => {
 			rej,
 			`openssl pkey -pubout -in ${key} | openssl md5`
 		);
-		const res2 = await execute(
-			"cer",
-			merchant_name,
-			res,
-			rej,
-			`openssl x509 -pubkey -inform der -in ${cer} -noout | openssl md5`
-		);
-		if (res1 === res2) {
-			console.log("res1", res1, "res2", res2);
-			console.log(res1 === res2);
-			res("valid");
-		}
+		// const res2 = await execute(
+		// 	"cer",
+		// 	merchant_name,
+		// 	res,
+		// 	rej,
+		// 	`openssl x509 -pubkey -inform der -in ${cer} -noout | openssl md5`
+		// );
+		// if (res1 === res2) {
+		// 	console.log("res1", res1, "res2", res2);
+		// 	console.log(res1 === res2);
+		// 	// res("valid");
+		// }
 	});
 };
 const create = (name = "name") => {
@@ -65,12 +60,23 @@ const create = (name = "name") => {
 	});
 };
 const execute = async (format, merchantName = null, res, rej, command) => {
+	let res1, res2;
 	try {
 		const ex = util.promisify(exec);
 		if (format === "cer") {
+			const cer = path.join(
+				__filename,
+				`../../apple_certificate/${merchantName}.cer`
+			);
 			const { stdout, stderr } = await ex(command);
-			res(stdout);
+			res1 = stdout;
+			const { std, stde } = await ex(
+				`openssl x509 -pubkey -inform der -in ${cer} -noout | openssl md5`
+			);
+			res2 = std;
+			console.log(res1, "..", res2);
 		}
+
 		{
 		}
 		if (format === "csr") {
